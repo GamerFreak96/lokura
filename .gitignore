@@ -127,3 +127,72 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python package
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.5, 3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Lint with flake8
+      run: |
+        pip install flake8
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test with pytest
+      run: |
+        pip install pytest
+        pytest
+from telethon.sync import TelegramClient, events
+import re, asyncio, random
+
+api_id = 1380276
+api_hash = '1190e7f7c900b51d649844e39c3b7ece'
+
+reg_stroll = re.compile('You were strolling around on your horse when you noticed')
+reg_pledge_received = re.compile('To accept their offer, you shall')
+ChatWars_Channel = '@chtwrsbot'
+
+print('Trying to connect telegram')
+with TelegramClient("testing", api_id, api_hash) as client:
+    print("Connected to telegram")
+    client.send_message(ChatWars_Channel, "/me")
+
+
+    @client.on(events.NewMessage(chats=ChatWars_Channel, incoming=True))
+    async def chatwars_handler(event):
+        if re.search(reg_stroll, event.raw_text):
+            sleep_time = random.randint(35, 50)
+            await asyncio.sleep(sleep_time)
+            await event.click(0)
+
+        if re.search(reg_pledge_received, event.raw_text):
+            sleep_time = random.randint(10,15)
+            await asyncio.sleep(sleep_time)
+            await client.send_message(ChatWars_Channel, "/pledge")
+
+    client.run_until_disconnected()
